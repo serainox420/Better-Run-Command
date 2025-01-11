@@ -158,22 +158,86 @@ extract() {
 >    # === CUSTOMIZE UP TO PREFERENCES ===
 >    echo "Files organized!"
 > }
+---
+> ## Copy & Paste
+> Copy: `echo "Stuff" | copy`, `copy "Stuff"`, `copy $VAR` \
+> Paste: `paste`, `<command> $(paste)`
+> ```bash
+> copy() {
+>    # Copy from stdin (e.g., echo "text" | copy)
+>    if [ $# -eq 0 ]; then
+>        xclip -selection clipboard
+>    else
+>        # Copy directly from a string or variable
+>        echo -n "$*" | xclip -selection clipboard
+>    fi
+> }
+> paste() {
+>    xclip -selection clipboard -o
+> }
 
 ---
 # Misc:
-> ### Disable EOL
+> ## Disable EOL
 > Disable the end-of-line marker [%]
 > ```bash
 > export PROMPT_EOL_MARK=""
 
-> ### Lazy ass cd
+> ## Show Space
+> Space usage for current folder
+> ```bash
+> alias diskspace="du -sh * 2>/dev/null | sort -h"
+
+> ## Weather
+> Display weather for your location or specified city
+> ```bash
+> weather() {
+>    if [ -z "$1" ]; then
+>        curl "wttr.in?format=4"
+>    else
+>        curl "wttr.in/${1// /+}?format=4"
+>    fi
+> }
+
+> ## Find and open
+> Find any file and open with fzf
+> ```bash
+> fopen() {
+>    local file
+>    file=$(find . -type f -iname "*$1*" | fzf) && xdg-open "$file"
+> }
+
+> ## Find files by name
+> ```bash
+> alias ffind="find . -type f -iname"
+
+> ## Find directories by name
+> ```bash
+> alias dfind="find . -type d -iname"
+
+> ## Command Timer
+> Time the execution of any command.
+> ```bash
+> timer() {
+>    start=$(date +%s)
+>    "$@"
+>    end=$(date +%s)
+>    echo "Time elapsed: $((end - start)) seconds."
+> }
+
+> ## Quick http python server
+> Run to start py server / Optionally define port: $0 <port>
+> ```bash
+> alias serve="python3 -m http.server"
+
+> ## Lazy ass cd
 > Use `..`, `...`, and `....` to move up by one, two or three paths
 > ```bash
 > alias ..="cd .."
 > alias ...="cd ../.."
 > alias ....="cd ../../.."
 
-> ### mkcd
+> ## mkcd
 > Create a directory and immediatly cd into it
 > ```bash
 > mkcd() {
@@ -181,7 +245,7 @@ extract() {
 > }
 
 ---
-> ### Colorized Man
+> ## Colorized Man
 > Make `man` pages easier to read with syntax highlighting
 > ```bash
 > # Man Syntax Highlight
@@ -193,8 +257,14 @@ extract() {
 > export LESS_TERMCAP_ue=$'\e[0m'     # Reset
 > export LESS_TERMCAP_us=$'\e[1;32m'  # Green
 
+> ## Grep+
+> Grep highlight & count
+> ```bash
+> alias grepi="grep -i --color=auto"
+> alias grepc="grep -c --color=auto"
+
 ---
-> ### NET-PACK
+> ## NET-PACK
 > Set of networking aliases
 ```bash
 # NET-PACK

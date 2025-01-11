@@ -34,11 +34,35 @@ function reloadrc() {
 
 
 ---
-# Variables:
+# $ Variables:
 > ### SSH Destinations
-> Save your `<user>@<ip>` as variable to use with `ssh $SERVER`
+> Define your `<user>@<ip>` as `$SERVER` variable to use with `ssh $SERVER`
 ```bash
 export SERVER="root@127.0.0.1"
+```
+
+> ### Current shell .rc
+> Detect currently used shell, and define it's .rc path as `$SHRC`
+```bash
+set_shrc() {
+  if [ -n "$ZSH_VERSION" ]; then
+    export SHRC="$HOME/.zshrc"
+  elif [ -n "$BASH_VERSION" ]; then
+    export SHRC="$HOME/.bashrc"
+  else
+    # Fallback for other shells (customize as needed)
+    export SHRC="$HOME/.bashrc"
+  fi
+}
+set_shrc
+```
+
+---
+# Misc:
+> ### Disable EOL
+> Disable the end-of-line marker [%]
+```bash
+export PROMPT_EOL_MARK=""
 ```
 
 ---

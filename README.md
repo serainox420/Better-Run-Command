@@ -1,7 +1,7 @@
 # Better-Run-Command
 > ### Shell run command configs (.bashrc / .zshrc)
 
----
+> ---
 > ### nohups
 > Silent nohup (does not produce nohup.out log)
 ```bash
@@ -9,13 +9,13 @@ function nohups() {
     nohup "$@" &>/dev/null &
 }
 ```
----
+> ---
 > ### SSH Destinations
 > Define your `<user>@<ip>` as `$SERVER` variable to use with `ssh $SERVER`
 ```bash
 export SERVER="root@127.0.0.1"
 ```
----
+> ---
 > ### Current shell .rc
 > Detect currently used shell, and define it's .rc path as `$SHRC`
 ```bash
@@ -43,7 +43,7 @@ esac
 ```bash
 alias reloadrc="source $SHRC"
 ```
----
+> ---
 > ### unsource
 > Dynamically unload sorced files from current session \
 > (find all vars & als & funcs from file, then unsets & unaliases them)
@@ -76,6 +76,58 @@ unsource() {
     echo "Unloaded file: $file"
 }
 ```
+> ---
+> ### tidy
+> Move files by pattern to their target dirs (eg .mp3 to Audio folder etc)
+```bash
+tidy() {
+    # Ensure the base directories exist
+    mkdir -p "$HOME/Media"/{Pictures,Video,Audio,Documents,Misc}
+    # Function to move files and avoid overwriting
+    move_file() {
+        local src_file="$1"
+        local dest_dir="$2"
+        # Extract the file name and extension
+        local base_name="${src_file:t}"
+        local name="${base_name%.*}"
+        local ext="${base_name##*.}"
+        local dest_file="$dest_dir/$base_name"
+        local counter=0
+        # Check for conflicts and append a number if needed
+        while [[ -e "$dest_file" ]]; do
+            dest_file="$dest_dir/${name}-${counter}.${ext}"
+            ((counter++))
+        done
+        mv "$src_file" "$dest_file"
+    }
+
+    # Pictures
+    for file in *.gif(N); do
+        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
+        echo "Moved $file"
+    done
+    for file in *.jpg(N); do
+        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
+        echo "Moved $file"
+    done
+    for file in *.png(N); do
+        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
+        echo "Moved $file"
+    done
+
+    # Audio
+    for file in *.mp3(N); do
+        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Audio"
+        echo "Moved $file"
+    done
+    for file in *.wav(N); do
+        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Audio"
+        echo "Moved $file"
+    done
+    # === CUSTOMIZE UP TO PREFERENCES ===
+    echo "Files organized!"
+}
+```
 ---
 # Misc:
 > ### Disable EOL
@@ -83,6 +135,18 @@ unsource() {
 ```bash
 export PROMPT_EOL_MARK=""
 ```
-
+> ### Lazy ass cd
+> Use `..`, `...`, and `....` to move up by one, two or three paths
+```bash
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+```
+> ### mkcd
+> Create a directory and immediatly cd into it
+```bash
+mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+```
 ---
-# Aliases:

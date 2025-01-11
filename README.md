@@ -1,7 +1,12 @@
-# Better-Run-Command
-> ### Shell run command configs (.bashrc / .zshrc)
+<div align="center">
+  <a href="https://git.io/typing-svg">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=70&duration=1000&pause=2000&color=2BB279&center=true&vCenter=true&width=835&height=160&lines=Better+Run+Command" alt="Typing SVG">
+  </a>
+</div>
 
-> ---
+## <div align="center">Shell (rc) configs (.bashrc / .zshrc)</a></div>
+
+---
 > ### nohups
 > Silent nohup (does not produce nohup.out log)
 ```bash

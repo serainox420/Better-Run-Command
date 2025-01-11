@@ -35,233 +35,285 @@ extract() {
 > ---
 > ## nohups
 > Silent nohup (does not produce nohup.out log)
-> ```bash
-> function nohups() {nohup "$@" &>/dev/null &}
+```bash
+function nohups() {nohup "$@" &>/dev/null &}
+```
 
-> ---
+---
 > ## SSH Destinations
 > Define your `<user>@<ip>` as `$SERVER` variable to use with `ssh $SERVER`
-> ```bash
-> export SERVER="root@127.0.0.1"
+```bash
+export SERVER="root@127.0.0.1"
+```
 
-> ---
+---
 > ## Current shell .rc
 > Detect currently used shell, and define it's .rc path as `$SHRC`
-> ```bash
-> case "$SHELL" in
->    */bash)
->        export SHRC="$HOME/.bashrc"
->        ;;
->    */zsh)
->        export SHRC="$HOME/.zshrc"
->        ;;
->    */ksh)
->        export SHRC="$HOME/.kshrc"
->        ;;
->    */fish)
->        export SHRC="$HOME/.config/fish/config.fish"
->        ;;
->    *)
->        # Fallback for other shells
->        export SHRC="$HOME/.profile"
->        ;;
-> esac
-> ```
+```bash
+case "$SHELL" in
+   */bash)
+       export SHRC="$HOME/.bashrc"
+       ;;
+   */zsh)
+       export SHRC="$HOME/.zshrc"
+       ;;
+   */ksh)
+       export SHRC="$HOME/.kshrc"
+       ;;
+   */fish)
+       export SHRC="$HOME/.config/fish/config.fish"
+       ;;
+   *)
+       # Fallback for other shells
+       export SHRC="$HOME/.profile"
+       ;;
+esac
+```
 
 
 > ## reloadrc
 > Reload shell automatically (source .$0rc)
-> ```bash
-> alias reloadrc="source $SHRC"
+```bash
+alias reloadrc="source $SHRC"
+```
 
 > ---
 > ## unsource
 > Dynamically unload sorced files from current session \
 > (find all vars & als & funcs from file, then unsets & unaliases them)
-> ```bash
-> unsource() {
->     local file="$1"
->    # Check if the file exists
->    if [[ ! -f "$file" ]]; then
->        echo "File not found: $file"
->        return 1
->    fi
->    # Unset all variables defined in the file
->    while IFS= read -r line; do
->        if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)= ]]; then
->            unset "${BASH_REMATCH[1]}"
->        fi
->    done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$file")
->    # Unset all functions defined in the file
->    while IFS= read -r func_name; do
->        unset -f "$func_name"
->    done < <(declare -F | awk '{print $NF}' | grep -Fxf <(grep -oP '^[A-Za-z_][A-Za-z0-9_]*(?=\(\))' "$file"))
->    # Unalias all aliases defined in the file
->    while IFS= read -r alias_name; do
->        unalias "$alias_name" 2>/dev/null
->    done < <(grep -oP '^alias\s+\K[A-Za-z_][A-Za-z0-9_]*' "$file")
->    # Unset all exported variables defined in the file
->    while IFS= read -r export_var; do
->        unset "$export_var"
->    done < <(grep -oP '^export\s+\K[A-Za-z_][A-Za-z0-9_]*' "$file")
->    echo "Unloaded file: $file"}
-
+```bash
+unsource() {
+    local file="$1"
+   # Check if the file exists
+   if [[ ! -f "$file" ]]; then
+       echo "File not found: $file"
+       return 1
+   fi
+   # Unset all variables defined in the file
+   while IFS= read -r line; do
+       if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)= ]]; then
+           unset "${BASH_REMATCH[1]}"
+       fi
+   done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$file")
+   # Unset all functions defined in the file
+   while IFS= read -r func_name; do
+       unset -f "$func_name"
+   done < <(declare -F | awk '{print $NF}' | grep -Fxf <(grep -oP '^[A-Za-z_][A-Za-z0-9_]*(?=\(\))' "$file"))
+   # Unalias all aliases defined in the file
+   while IFS= read -r alias_name; do
+       unalias "$alias_name" 2>/dev/null
+   done < <(grep -oP '^alias\s+\K[A-Za-z_][A-Za-z0-9_]*' "$file")
+   # Unset all exported variables defined in the file
+   while IFS= read -r export_var; do
+       unset "$export_var"
+   done < <(grep -oP '^export\s+\K[A-Za-z_][A-Za-z0-9_]*' "$file")
+   echo "Unloaded file: $file"}
+```
 
 > ---
 > ## tidy
 > Move files by pattern to their target dirs (eg .mp3 to Audio folder etc)
-> ```bash
-> tidy() {
->    # Ensure the base directories exist
->    mkdir -p "$HOME/Media"/{Pictures,Video,Audio,Documents,Misc}
->    # Function to move files and avoid overwriting
->    move_file() {
->        local src_file="$1"
->        local dest_dir="$2"
->        # Extract the file name and extension
->        local base_name="${src_file:t}"
->        local name="${base_name%.*}"
->        local ext="${base_name##*.}"
->        local dest_file="$dest_dir/$base_name"
->        local counter=0
->        # Check for conflicts and append a number if needed
->        while [[ -e "$dest_file" ]]; do
->            dest_file="$dest_dir/${name}-${counter}.${ext}"
->            ((counter++))
->        done
->        mv "$src_file" "$dest_file"
->    }
->
->    # Pictures
->    for file in *.gif(N); do
->        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
->        echo "Moved $file"
->    done
->    for file in *.jpg(N); do
->        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
->        echo "Moved $file"
->    done
->    for file in *.png(N); do
->        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
->        echo "Moved $file"
->    done
->
->    # Audio
->    for file in *.mp3(N); do
->        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Audio"
->        echo "Moved $file"
->    done
->    for file in *.wav(N); do
->        [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Audio"
->        echo "Moved $file"
->    done
->    # === CUSTOMIZE UP TO PREFERENCES ===
->    echo "Files organized!"
-> }
+```bash
+tidy() {
+   # Ensure the base directories exist
+   mkdir -p "$HOME/Media"/{Pictures,Video,Audio,Documents,Misc}
+   # Function to move files and avoid overwriting
+   move_file() {
+       local src_file="$1"
+       local dest_dir="$2"
+       # Extract the file name and extension
+       local base_name="${src_file:t}"
+       local name="${base_name%.*}"
+       local ext="${base_name##*.}"
+       local dest_file="$dest_dir/$base_name"
+       local counter=0
+       # Check for conflicts and append a number if needed
+       while [[ -e "$dest_file" ]]; do
+           dest_file="$dest_dir/${name}-${counter}.${ext}"
+           ((counter++))
+       done
+       mv "$src_file" "$dest_file"
+   }
+   # Pictures
+   for file in *.gif(N); do
+       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
+       echo "Moved $file"
+   done
+   for file in *.jpg(N); do
+       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
+       echo "Moved $file"
+   done
+   for file in *.png(N); do
+       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
+       echo "Moved $file"
+   done
+   # Audio
+   for file in *.mp3(N); do
+       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Audio"
+       echo "Moved $file"
+   done
+   for file in *.wav(N); do
+       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Audio"
+       echo "Moved $file"
+   done
+   # === CUSTOMIZE UP TO PREFERENCES ===
+   echo "Files organized!"
+}
+```
+
+
 ---
 > ## Copy & Paste
 > Copy: `echo "Stuff" | copy`, `copy "Stuff"`, `copy $VAR` \
 > Paste: `paste`, `<command> $(paste)`
-> ```bash
-> copy() {
->    # Copy from stdin (e.g., echo "text" | copy)
->    if [ $# -eq 0 ]; then
->        xclip -selection clipboard
->    else
->        # Copy directly from a string or variable
->        echo -n "$*" | xclip -selection clipboard
->    fi
-> }
-> paste() {
->    xclip -selection clipboard -o
-> }
+```bash
+copy() {
+   # Copy from stdin (e.g., echo "text" | copy)
+   if [ $# -eq 0 ]; then
+       xclip -selection clipboard
+   else
+       # Copy directly from a string or variable
+       echo -n "$*" | xclip -selection clipboard
+   fi
+}
+paste() {
+   xclip -selection clipboard -o
+}
+```
+
+> ## Copy file contents
+> Eg: `copyf <filename>`
+```bash
+alias copyf="cat $1 | xclip -selection clipboard"
+```
+
+> ## Create quick notes
+```bash
+note() {
+    if [ $# -eq 0 ]; then
+        echo "= Logging mode =\n- Type your note (press Enter for new line, end with a double quote (\") to save):\n\n"
+        while IFS= read -r line; do
+            if [[ "$line" == *\" ]]; then
+                # Remove the trailing quote and append to the file
+                echo "${line%\"}" >> ~/quick_notes.txt
+                echo "Note saved!"
+                break
+            fi
+            # Append each line to the file
+            echo "$line" >> ~/quick_notes.txt
+        done
+    else
+        # Append arguments as a single line to the file
+        echo "$*" >> ~/quick_notes.txt
+        echo "Note added!"
+    fi
+}
+notes() {
+    if [ -f ~/quick_notes.txt ]; then
+        cat ~/quick_notes.txt
+    else
+        echo "No notes found."
+    fi
+}
+```
 
 ---
 # Misc:
 > ## Disable EOL
 > Disable the end-of-line marker [%]
-> ```bash
-> export PROMPT_EOL_MARK=""
+```bash
+export PROMPT_EOL_MARK=""
+```
 
 > ## Show Space
 > Space usage for current folder
-> ```bash
-> alias diskspace="du -sh * 2>/dev/null | sort -h"
+```bash
+alias diskspace="du -sh * 2>/dev/null | sort -h"
+```
 
 > ## Weather
 > Display weather for your location or specified city
-> ```bash
-> weather() {
->    if [ -z "$1" ]; then
->        curl "wttr.in?format=4"
->    else
->        curl "wttr.in/${1// /+}?format=4"
->    fi
-> }
+```bash
+weather() {
+   if [ -z "$1" ]; then
+       curl "wttr.in?format=4"
+   else
+       curl "wttr.in/${1// /+}?format=4"
+   fi
+}
+```
 
 > ## Find and open
-> Find any file and open with fzf
-> ```bash
-> fopen() {
->    local file
->    file=$(find . -type f -iname "*$1*" | fzf) && xdg-open "$file"
-> }
+Find any file and open with fzf
+```bash
+fopen() {
+   local file
+   file=$(find . -type f -iname "*$1*" | fzf) && xdg-open "$file"
+}
+```
 
 > ## Find files by name
-> ```bash
-> alias ffind="find . -type f -iname"
+```bash
+alias ffind="find . -type f -iname"
+```
 
 > ## Find directories by name
-> ```bash
-> alias dfind="find . -type d -iname"
+```bash
+alias dfind="find . -type d -iname"
+```
 
 > ## Command Timer
 > Time the execution of any command.
-> ```bash
-> timer() {
->    start=$(date +%s)
->    "$@"
->    end=$(date +%s)
->    echo "Time elapsed: $((end - start)) seconds."
-> }
+```bash
+timer() {
+   start=$(date +%s)
+   "$@"
+   end=$(date +%s)
+   echo "Time elapsed: $((end - start)) seconds."
+}
+```
 
 > ## Quick http python server
 > Run to start py server / Optionally define port: $0 <port>
-> ```bash
-> alias serve="python3 -m http.server"
+```bash
+alias serve="python3 -m http.server"
+```
 
 > ## Lazy ass cd
 > Use `..`, `...`, and `....` to move up by one, two or three paths
-> ```bash
-> alias ..="cd .."
-> alias ...="cd ../.."
-> alias ....="cd ../../.."
+```bash
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+```
 
 > ## mkcd
 > Create a directory and immediatly cd into it
-> ```bash
-> mkcd() {
->     mkdir -p "$1" && cd "$1"
-> }
-
+```bash
+mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+```
 ---
 > ## Colorized Man
 > Make `man` pages easier to read with syntax highlighting
-> ```bash
-> # Man Syntax Highlight
-> export LESS_TERMCAP_mb=$'\e[1;31m'  # Red
-> export LESS_TERMCAP_md=$'\e[1;35m'  # Magenta
-> export LESS_TERMCAP_me=$'\e[0m'     # Reset
-> export LESS_TERMCAP_se=$'\e[0m'     # Reset
-> export LESS_TERMCAP_so=$'\e[1;44;33m' # Yellow on blue
-> export LESS_TERMCAP_ue=$'\e[0m'     # Reset
-> export LESS_TERMCAP_us=$'\e[1;32m'  # Green
+```bash
+# Man Syntax Highlight
+export LESS_TERMCAP_mb=$'\e[1;31m'  # Red
+export LESS_TERMCAP_md=$'\e[1;35m'  # Magenta
+export LESS_TERMCAP_me=$'\e[0m'     # Reset
+export LESS_TERMCAP_se=$'\e[0m'     # Reset
+export LESS_TERMCAP_so=$'\e[1;44;33m' # Yellow on blue
+export LESS_TERMCAP_ue=$'\e[0m'     # Reset
+export LESS_TERMCAP_us=$'\e[1;32m'  # Green
+```
 
 > ## Grep+
 > Grep highlight & count
-> ```bash
-> alias grepi="grep -i --color=auto"
-> alias grepc="grep -c --color=auto"
+```bash
+alias grepi="grep -i --color=auto"
+alias grepc="grep -c --color=auto"
+```
 
 ---
 > ## NET-PACK

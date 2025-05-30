@@ -374,14 +374,20 @@ alias sslcheck="echo | openssl s_client -connect example.com:443 2>/dev/null | o
 > ## CLI Clock in ASCII
 > ### Default mode: `figlet`, Add `-t` to use `toilet`
 > ### Add `--font <font-name>` to use different fonts
+> ### Add `-s` to display with seconds
 ```bash
 clock() {
   cmd="figlet"
   args=()
+  fmt="%H:%M"
   while [[ $# -gt 0 ]]; do
     case $1 in
       -t|--toilet)
         cmd="toilet"
+        shift
+        ;;
+      -s|--seconds)
+        fmt="%H:%M:%S"
         shift
         ;;
       *)
@@ -393,7 +399,7 @@ clock() {
   while true; do
     clear
     tput civis
-    out="$(date +"%H:%M:%S" | $cmd "${args[@]}")"
+    out="$(date +"$fmt" | $cmd "${args[@]}")"
     rows=$(echo "$out" | wc -l)
     cols=$(echo "$out" | head -n1 | wc -c)
     term_rows=$(tput lines)
@@ -408,7 +414,6 @@ clock() {
   done
   tput cnorm
 }
-
 ```
 
 > ## List all available ASCII fonts

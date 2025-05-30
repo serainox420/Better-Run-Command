@@ -370,3 +370,26 @@ alias showwifi="nmcli dev wifi list"
 # Check SSL Certificate Expiry
 alias sslcheck="echo | openssl s_client -connect example.com:443 2>/dev/null | openssl x509 -noout -dates"
 ```
+
+> ## CLI Clock in ASCII
+```bash
+clock() {
+  while true; do
+    clear
+    tput civis
+    time="$(date +"%H:%M:%S" | figlet)"
+    rows=$(echo "$time" | wc -l)
+    cols=$(echo "$time" | head -n1 | wc -c)
+    term_rows=$(tput lines)
+    term_cols=$(tput cols)
+    pad_top=$(( (term_rows - rows) / 2 ))
+    pad_left=$(( (term_cols - cols) / 2 ))
+    for ((i=0; i<pad_top; i++)); do echo; done
+    echo "$time" | while IFS= read -r line; do
+      printf "%*s%s\n" $pad_left "" "$line"
+    done
+    sleep 1
+  done
+  tput cnorm
+}
+```

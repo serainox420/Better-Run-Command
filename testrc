@@ -559,3 +559,23 @@ listrc() {
   cat "$tmpfile"
 }
 
+# CLI Clock in ASCII
+clock() {
+  while true; do
+    clear
+    tput civis
+    time="$(date +"%H:%M:%S" | figlet)"
+    rows=$(echo "$time" | wc -l)
+    cols=$(echo "$time" | head -n1 | wc -c)
+    term_rows=$(tput lines)
+    term_cols=$(tput cols)
+    pad_top=$(( (term_rows - rows) / 2 ))
+    pad_left=$(( (term_cols - cols) / 2 ))
+    for ((i=0; i<pad_top; i++)); do echo; done
+    echo "$time" | while IFS= read -r line; do
+      printf "%*s%s\n" $pad_left "" "$line"
+    done
+    sleep 1
+  done
+  tput cnorm
+}

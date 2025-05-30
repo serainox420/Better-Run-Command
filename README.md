@@ -393,3 +393,37 @@ clock() {
   tput cnorm
 }
 ```
+
+> ## List all available ASCII fonts
+> ### Default mode: `figlet`, add `-t` to list `toilet` fonts
+```bash
+ascii_fonts() {
+  tool="figlet"
+  ex="flf"
+  dirs=(/usr/share/figlet/fonts)
+  if [[ $1 == "-t" || $1 == "--toilet" ]]; then
+    tool="toilet"
+    ex="tlf"
+    dirs=(/usr/share/figlet)
+    shift
+  fi
+  found=0
+  for dir in "${dirs[@]}"; do
+    [[ -d $dir ]] || continue
+    for f in "$dir"/*.$ex(N); do
+      [[ -f $f ]] || continue
+      font=$(basename "$f" .${ex})
+      echo "---------------------------"
+      if [[ $tool == "figlet" ]]; then
+        figlet -f "$font" example
+      else
+        toilet -f "$font" example
+      fi
+      echo "$font"
+      echo
+      found=1
+    done
+  done
+  [[ $found -eq 1 ]] || echo "No fonts found. Blame Bill Gates."
+}
+```

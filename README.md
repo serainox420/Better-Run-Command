@@ -1,10 +1,6 @@
-<div align="center">
-  <a href="https://git.io/typing-svg">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=70&duration=1000&pause=2000&color=2BB279&center=true&vCenter=true&width=835&height=160&lines=Better+Run+Command" alt="Typing SVG">
-  </a>
-</div>
+![source zshrc3-ezgif com-gif-maker](https://github.com/user-attachments/assets/eda11651-d644-4067-a973-1513336960b0)
+> # Shell user configs (.rc) [.zshrc]
 
-# <div align="center">Shell configs (.rc) (.bashrc / .zshrc)</a></div>
 
 ---
 > ## extract

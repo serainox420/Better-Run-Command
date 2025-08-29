@@ -417,35 +417,69 @@ clock() {
 ```
 
 > ## List all available ASCII fonts
-> ### Default mode: `figlet`, add `-t` to list `toilet` fonts
 ```bash
+# ascii_fonts [-t|--toilet] [-e "text"] [-s seconds]
+# -e/--example: what to render (default: "example")
+# -s/--speed: seconds per printed line (float ok, 0 = instant)
 ascii_fonts() {
-  tool="figlet"
-  ex="flf"
-  dirs=(/usr/share/figlet/fonts)
-  if [[ $1 == "-t" || $1 == "--toilet" ]]; then
-    tool="toilet"
-    ex="tlf"
-    dirs=(/usr/share/figlet)
-    shift
+  local tool="figlet" ex="flf" text="example" speed=0
+  local -a dirs
+  dirs=(/usr/share/figlet /usr/share/figlet/fonts ~/.local/share/figlet ~/.figlet)
+
+  # args
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -t|--toilet)
+        tool="toilet"; ex="tlf"
+        dirs=(/usr/share/figlet ~/.local/share/figlet ~/.figlet)
+        shift
+        ;;
+      -e|--example)
+        [[ -n "${2:-}" ]] || { echo "Missing text for -e/--example"; return 1; }
+        text="$2"; shift 2
+        ;;
+      -s|--speed)
+        [[ -n "${2:-}" ]] || { echo "Missing value for -s/--speed"; return 1; }
+        speed="$2"; shift 2
+        ;;
+      --) shift; break ;;
+      *)  break ;;
+    esac
+  done
+
+  local -a cmd
+  if [[ $tool == "figlet" ]]; then
+    cmd=(figlet -f)
+  else
+    cmd=(toilet -f)
   fi
-  found=0
+
+  local found=0 out font
   for dir in "${dirs[@]}"; do
     [[ -d $dir ]] || continue
     for f in "$dir"/*.$ex(N); do
       [[ -f $f ]] || continue
-      font=$(basename "$f" .${ex})
+      font="${${f##*/}%.$ex}"
+
+      # render; skip broken fonts quietly
+      out="$("${cmd[@]}" "$font" -- "$text" 2>/dev/null)" || continue
+
       echo "---------------------------"
-      if [[ $tool == "figlet" ]]; then
-        figlet -f "$font" example
+      if (( speed > 0 )); then
+        # print line-by-line with delay
+        while IFS= read -r line; do
+          print -r -- "$line"
+          sleep "$speed"
+        done <<< "$out"
       else
-        toilet -f "$font" example
+        print -r -- "$out"
       fi
       echo "$font"
       echo
       found=1
     done
   done
-  [[ $found -eq 1 ]] || echo "No fonts found. Blame Bill Gates."
+
+  (( found )) || echo "No fonts found. Blame Bill Gates."
 }
 ```

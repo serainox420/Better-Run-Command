@@ -479,3 +479,18 @@ ascii_fonts() {
   (( found )) || echo "No fonts found. Blame Bill Gates."
 }
 ```
+
+> # UnWebP
+> Convert all WebP in current path to PNG
+```bash
+unwebp() {
+  emulate -L zsh
+  setopt null_glob
+
+  for f in *.webp; do
+    local out="${f%.webp}.png"
+    ffmpeg -loglevel error -y -i "$f" "$out" && rm -f "$f"
+    echo "[*] $f → $out"
+  done
+}
+```

@@ -1,546 +1,113 @@
-![source zshrc3-ezgif com-gif-maker](https://github.com/user-attachments/assets/eda11651-d644-4067-a973-1513336960b0)
-> # Shell user configs (.rc) [.zshrc]
+# Modules
 
----
-
-> ## Better `less`
-```zsh
-# les (better less)
-# less: kolory pewne, start od dołu
-les() { command less -r +G -X -- "$@"; }  # jeśli wolisz bez raw: zamień -r na -R
-
-# ls → less z wymuszoną kolorystyką
-lez() { command ls --color=always -1 "$@" | les; }
-
-# twoje lsf → less
-lezz() { lsf "$@" | les; }  # upewnij się, że w lsf masz --color=always
-```
-
-> ## ***list recently modified files***
-> ### Trim name to 25 characters, preserve extension, color output \
-> <img width="298" height="186" alt="image" src="https://github.com/user-attachments/assets/451e3ff9-cafe-447c-8b7d-7176239bbf8d" />
-
-```zsh
-# list files, sort by recent modification date, trim name to 25 chars, keep format and highlight output
-lsf() {
-  command ls --color=always --hyperlink=never -1 -p -t "$@" \
-  | tac \
-  | awk '
-    BEGIN{
-      ESC=sprintf("%c",27); esc_re=ESC "\\[[0-9;]*[A-Za-z]"; reset_re=ESC "\\[[0-9;]*m"; max=25
-    }
-    {
-      orig=$0
-      plain=orig; gsub(esc_re,"",plain)             # strip ANSI for logic
-      if (plain ~ /\/$/) next                       # drop dirs (from -p)
-      col=""; rest=orig                             
-      while (match(rest, "^" esc_re)) {             # leading color prefix
-        col=col substr(rest,RSTART,RLENGTH); rest=substr(rest,RLENGTH+1)
-      }
-      reset=""; t=orig                              
-      while (match(t, reset_re)) {                   # last reset
-        reset=substr(t,RSTART,RLENGTH); t=substr(t,RSTART+RLENGTH)
-      }
-      # split base/ext; ignore leading dot as extension
-      n=length(plain); dotpos=0
-      for (i=2;i<=n-1;i++) if (substr(plain,i,1)==".") dotpos=i
-      if (dotpos>1) { base=substr(plain,1,dotpos-1); ext=substr(plain,dotpos+1) } else { base=plain; ext="" }
-      base_max=max; if (ext!="") base_max=max-1-length(ext); if (base_max<1) base_max=1
-      vbase=substr(base,1,base_max)
-      out=vbase ((ext!="") ? "." ext : "")
-      printf "%s%s%s\n", col, out, reset
-    }'
-}
-```
-
-> ## extract
-> Extract any type of archive with simple command
-```bash
-extract() {
-    if [ -f "$1" ]; then
-        case "$1" in
-            *.tar.bz2) tar xvjf "$1" ;;
-            *.tar.gz) tar xvzf "$1" ;;
-            *.bz2) bunzip2 "$1" ;;
-            *.rar) unrar x "$1" ;;
-            *.gz) gunzip "$1" ;;
-            *.tar) tar xvf "$1" ;;
-            *.tbz2) tar xvjf "$1" ;;
-            *.tgz) tar xvzf "$1" ;;
-            *.zip) unzip "$1" ;;
-            *.Z) uncompress "$1" ;;
-            *.7z) 7z x "$1" ;;
-            *) echo "Cannot extract '$1'" ;;
-        esac
-    else
-        echo "'$1' is not a valid file."
-    fi
-}
-```
-
+> ## Better Less
+> Enhanced wrappers around `less` with color-preserving helpers. \
+> `modules/better-less.zsh`
 > ---
-> ## nohups
-> Silent nohup (does not produce nohup.out log)
-```bash
-function nohups() {nohup "$@" &>/dev/null &}
-```
-
----
-> ## SSH Destinations
-> Define your `<user>@<ip>` as `$SERVER` variable to use with `ssh $SERVER`
-```bash
-export SERVER="root@127.0.0.1"
-```
-
----
-> ## Current shell .rc
-> Detect currently used shell, and define it's .rc path as `$SHRC`
-```bash
-case "$SHELL" in
-   */bash)
-       export SHRC="$HOME/.bashrc"
-       ;;
-   */zsh)
-       export SHRC="$HOME/.zshrc"
-       ;;
-   */ksh)
-       export SHRC="$HOME/.kshrc"
-       ;;
-   */fish)
-       export SHRC="$HOME/.config/fish/config.fish"
-       ;;
-   *)
-       # Fallback for other shells
-       export SHRC="$HOME/.profile"
-       ;;
-esac
-```
-
-
-> ## reloadrc
-> Reload shell automatically (source .$0rc)
-```bash
-alias reloadrc="source $SHRC"
-```
-
+> ## List Recent Files
+> Trimmed, color-safe view of recently modified files. \
+> `modules/list-recent-files.zsh`
 > ---
-> ## unsource
-> Dynamically unload sorced files from current session \
-> (find all vars & als & funcs from file, then unsets & unaliases them)
-```bash
-unsource() {
-    local file="$1"
-   # Check if the file exists
-   if [[ ! -f "$file" ]]; then
-       echo "File not found: $file"
-       return 1
-   fi
-   # Unset all variables defined in the file
-   while IFS= read -r line; do
-       if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)= ]]; then
-           unset "${BASH_REMATCH[1]}"
-       fi
-   done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$file")
-   # Unset all functions defined in the file
-   while IFS= read -r func_name; do
-       unset -f "$func_name"
-   done < <(declare -F | awk '{print $NF}' | grep -Fxf <(grep -oP '^[A-Za-z_][A-Za-z0-9_]*(?=\(\))' "$file"))
-   # Unalias all aliases defined in the file
-   while IFS= read -r alias_name; do
-       unalias "$alias_name" 2>/dev/null
-   done < <(grep -oP '^alias\s+\K[A-Za-z_][A-Za-z0-9_]*' "$file")
-   # Unset all exported variables defined in the file
-   while IFS= read -r export_var; do
-       unset "$export_var"
-   done < <(grep -oP '^export\s+\K[A-Za-z_][A-Za-z0-9_]*' "$file")
-   echo "Unloaded file: $file"}
-```
-
+> ## Extract Archives
+> One command to unpack many common archive formats. \
+> `modules/extract-archives.zsh`
 > ---
-> ## tidy
-> Move files by pattern to their target dirs (eg .mp3 to Audio folder etc)
-```bash
-tidy() {
-   # Ensure the base directories exist
-   mkdir -p "$HOME/Media"/{Pictures,Video,Audio,Documents,Misc}
-   # Function to move files and avoid overwriting
-   move_file() {
-       local src_file="$1"
-       local dest_dir="$2"
-       # Extract the file name and extension
-       local base_name="${src_file:t}"
-       local name="${base_name%.*}"
-       local ext="${base_name##*.}"
-       local dest_file="$dest_dir/$base_name"
-       local counter=0
-       # Check for conflicts and append a number if needed
-       while [[ -e "$dest_file" ]]; do
-           dest_file="$dest_dir/${name}-${counter}.${ext}"
-           ((counter++))
-       done
-       mv "$src_file" "$dest_file"
-   }
-   # Pictures
-   for file in *.gif(N); do
-       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
-       echo "Moved $file"
-   done
-   for file in *.jpg(N); do
-       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
-       echo "Moved $file"
-   done
-   for file in *.png(N); do
-       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Pictures"
-       echo "Moved $file"
-   done
-   # Audio
-   for file in *.mp3(N); do
-       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Audio"
-       echo "Moved $file"
-   done
-   for file in *.wav(N); do
-       [[ -e "$file" ]] && move_file "$file" "$HOME/Media/Audio"
-       echo "Moved $file"
-   done
-   # === CUSTOMIZE UP TO PREFERENCES ===
-   echo "Files organized!"
-}
-```
-
-
----
+> ## Silent nohup
+> Background commands without generating `nohup.out`. \
+> `modules/silent-nohup.zsh`
+> ---
+> ## SSH Destination
+> Export a reusable remote target for `ssh`. \
+> `modules/ssh-destinations.zsh`
+> ---
+> ## Current Shell RC
+> Detect the active shell and expose its configuration file. \
+> `modules/current-shell-rc.zsh`
+> ---
+> ## Reload RC
+> Function wrapper to re-source the detected shell rc file. \
+> `modules/reload-rc.zsh`
+> ---
+> ## Unsource
+> Remove functions, aliases, and variables defined in another file. \
+> `modules/unsource.zsh`
+> ---
+> ## Tidy Media
+> Move common media types into organized directories. \
+> `modules/tidy-media.zsh`
+> ---
 > ## Copy & Paste
-> Copy: `echo "Stuff" | copy`, `copy "Stuff"`, `copy $VAR` \
-> Paste: `paste`, `<command> $(paste)`
-```bash
-copy() {
-   # Copy from stdin (e.g., echo "text" | copy)
-   if [ $# -eq 0 ]; then
-       xclip -selection clipboard
-   else
-       # Copy directly from a string or variable
-       echo -n "$*" | xclip -selection clipboard
-   fi
-}
-paste() {
-   xclip -selection clipboard -o
-}
-```
-
-> ## Copy file contents
-> Eg: `copyf <filename>`
-```bash
-alias copyf="cat $1 | xclip -selection clipboard"
-```
-
-> ## Create quick notes
-```bash
-note() {
-    if [ $# -eq 0 ]; then
-        echo "= Logging mode =\n- Type your note (press Enter for new line, end with a double quote (\") to save):\n\n"
-        while IFS= read -r line; do
-            if [[ "$line" == *\" ]]; then
-                # Remove the trailing quote and append to the file
-                echo "${line%\"}" >> ~/quick_notes.txt
-                echo "Note saved!"
-                break
-            fi
-            # Append each line to the file
-            echo "$line" >> ~/quick_notes.txt
-        done
-    else
-        # Append arguments as a single line to the file
-        echo "$*" >> ~/quick_notes.txt
-        echo "Note added!"
-    fi
-}
-notes() {
-    if [ -f ~/quick_notes.txt ]; then
-        cat ~/quick_notes.txt
-    else
-        echo "No notes found."
-    fi
-}
-```
-
----
-# Misc:
-> ## Disable EOL
-> Disable the end-of-line marker [%]
-```bash
-export PROMPT_EOL_MARK=""
-```
-
-> ## Show Space
-> Space usage for current folder
-```bash
-alias diskspace="du -sh * 2>/dev/null | sort -h"
-```
-
+> Clipboard helpers for piping and retrieving text. \
+> `modules/copy-paste.zsh`
+> ---
+> ## Copy File Contents
+> Copy the contents of a file directly to the clipboard. \
+> `modules/copy-file-contents.zsh`
+> ---
+> ## Quick Notes
+> Append and review notes in `~/quick_notes.txt`. \
+> `modules/quick-notes.zsh`
+> ---
+> ## Prompt EOL
+> Hide the default prompt end-of-line marker. \
+> `modules/prompt-eol.zsh`
+> ---
+> ## Disk Space
+> Alias for sorted directory size listings. \
+> `modules/disk-usage-alias.zsh`
+> ---
 > ## Weather
-> Display weather for your location or specified city
-```bash
-weather() {
-   if [ -z "$1" ]; then
-       curl "wttr.in?format=4"
-   else
-       curl "wttr.in/${1// /+}?format=4"
-   fi
-}
-```
-
-> ## Find and open
-Find any file and open with fzf
-```bash
-fopen() {
-   local file
-   file=$(find . -type f -iname "*$1*" | fzf) && xdg-open "$file"
-}
-```
-
-> ## Find files by name
-```bash
-alias ffind="find . -type f -iname"
-```
-
-> ## Find directories by name
-```bash
-alias dfind="find . -type d -iname"
-```
-
+> Fetch concise weather reports via `wttr.in`. \
+> `modules/weather.zsh`
+> ---
+> ## Find and Open
+> Locate files with `fzf` and open them via `xdg-open`. \
+> `modules/find-and-open.zsh`
+> ---
+> ## Find Files
+> Case-insensitive file lookup helper. \
+> `modules/find-files-alias.zsh`
+> ---
+> ## Find Directories
+> Case-insensitive directory lookup helper. \
+> `modules/find-directories-alias.zsh`
+> ---
 > ## Command Timer
-> Time the execution of any command.
-```bash
-timer() {
-   start=$(date +%s)
-   "$@"
-   end=$(date +%s)
-   echo "Time elapsed: $((end - start)) seconds."
-}
-```
-
-> ## Quick http python server
-> Run to start py server / Optionally define port: $0 <port>
-```bash
-alias serve="python3 -m http.server"
-```
-
-> ## Lazy ass cd
-> Use `..`, `...`, and `....` to move up by one, two or three paths
-```bash
-alias ..="cd .."
-alias ...="cd ../.."
-alias ....="cd ../../.."
-```
-
+> Measure runtime for arbitrary commands. \
+> `modules/command-timer.zsh`
+> ---
+> ## Python HTTP Server
+> Alias for the builtin Python simple HTTP server. \
+> `modules/python-http-server.zsh`
+> ---
+> ## Lazy CD
+> Short aliases for jumping up the directory tree. \
+> `modules/lazy-cd.zsh`
+> ---
 > ## mkcd
-> Create a directory and immediatly cd into it
-```bash
-mkcd() {
-    mkdir -p "$1" && cd "$1"
-}
-```
----
+> Create a directory and enter it in one step. \
+> `modules/mkcd.zsh`
+> ---
 > ## Colorized Man
-> Make `man` pages easier to read with syntax highlighting
-```bash
-# Man Syntax Highlight
-export LESS_TERMCAP_mb=$'\e[1;31m'  # Red
-export LESS_TERMCAP_md=$'\e[1;35m'  # Magenta
-export LESS_TERMCAP_me=$'\e[0m'     # Reset
-export LESS_TERMCAP_se=$'\e[0m'     # Reset
-export LESS_TERMCAP_so=$'\e[1;44;33m' # Yellow on blue
-export LESS_TERMCAP_ue=$'\e[0m'     # Reset
-export LESS_TERMCAP_us=$'\e[1;32m'  # Green
-```
-
+> Color configuration for `man` pages. \
+> `modules/colorized-man.zsh`
+> ---
 > ## Grep+
-> Grep highlight & count
-```bash
-alias grepi="grep -i --color=auto"
-alias grepc="grep -c --color=auto"
-```
-
----
+> Color and count variants of `grep`. \
+> `modules/grep-plus.zsh`
+> ---
 > ## NET-PACK
-> Set of networking aliases
-```bash
-# NET-PACK
-# Detailed IP info
-alias ipinfo="curl ipinfo.io"
-
-# Print External IPv4 and IPv6
-alias ip4ext="curl -4 ifconfig.me"
-alias ip6ext="curl -6 ifconfig.me"
-
-# Show Local IPs
-alias iplocal="hostname -I | tr ' ' '\n'"
-
-# Print Ipv6 and Ipv4
-alias ip6="curl ifconfig.me"
-alias ip4="hostname -I | tr ' ' '\n' | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'"
-
-# Show All Open Files by Network Processes
-alias netfiles="sudo lsof -i"
-
-# Print Ports & Listening Ports
-alias ports="netstat -tulanp"
-alias portsl="ss -tuln"
-
-# Capture packets
-alias tcpd="sudo tcpdump -i eth0"
-
-# Test connectivity by pinging google.com / 8.8.8.8
-alias pingg="ping google.com -c 4 && ping 8.8.8.8 -c 4"
-
-# Show Gateway, Routing table & DNS Server
-alias gateway="ip route | grep default | awk '{print \$3}'"
-alias routes="ip route show"
-alias dns="cat /etc/resolv.conf | grep nameserver | awk '{print \$2}'"
-
-# MAC Address of Interface
-alias mac="ip link show eth0 | awk '/ether/ {print \$2}'"
-
-# VPN Status
-alias vpnstatus="nmcli connection show --active | grep vpn"
-
-# Show All Active Connections
-alias activeconn="netstat -ant | grep ESTABLISHED"
-
-# List All Listening Services
-alias listensrv="sudo lsof -i -P -n | grep LISTEN"
-
-# Display All Wireless Networks
-alias showwifi="nmcli dev wifi list"
-
-# Check SSL Certificate Expiry
-alias sslcheck="echo | openssl s_client -connect example.com:443 2>/dev/null | openssl x509 -noout -dates"
-```
-
-> ## CLI Clock in ASCII
-> ### Default mode: `figlet`, Add `-t` to use `toilet`
-> ### Add `--font <font-name>` to use different fonts
-> ### Add `-s` to display with seconds
-```bash
-clock() {
-  cmd="figlet"
-  args=()
-  fmt="%H:%M"
-  while [[ $# -gt 0 ]]; do
-    case $1 in
-      -t|--toilet)
-        cmd="toilet"
-        shift
-        ;;
-      -s|--seconds)
-        fmt="%H:%M:%S"
-        shift
-        ;;
-      *)
-        args+=("$1")
-        shift
-        ;;
-    esac
-  done
-  while true; do
-    clear
-    tput civis
-    out="$(date +"$fmt" | $cmd "${args[@]}")"
-    rows=$(echo "$out" | wc -l)
-    cols=$(echo "$out" | head -n1 | wc -c)
-    term_rows=$(tput lines)
-    term_cols=$(tput cols)
-    pad_top=$(( (term_rows - rows) / 2 ))
-    pad_left=$(( (term_cols - cols) / 2 ))
-    for ((i=0; i<pad_top; i++)); do echo; done
-    echo "$out" | while IFS= read -r line; do
-      printf "%*s%s\n" $pad_left "" "$line"
-    done
-    sleep 1
-  done
-  tput cnorm
-}
-```
-
-> ## List all available ASCII fonts
-```bash
-# ascii_fonts [-t|--toilet] [-e "text"] [-s seconds]
-# -e/--example: what to render (default: "example")
-# -s/--speed: seconds per printed line (float ok, 0 = instant)
-ascii_fonts() {
-  local tool="figlet" ex="flf" text="example" speed=0
-  local -a dirs
-  dirs=(/usr/share/figlet /usr/share/figlet/fonts ~/.local/share/figlet ~/.figlet)
-
-  # args
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      -t|--toilet)
-        tool="toilet"; ex="tlf"
-        dirs=(/usr/share/figlet ~/.local/share/figlet ~/.figlet)
-        shift
-        ;;
-      -e|--example)
-        [[ -n "${2:-}" ]] || { echo "Missing text for -e/--example"; return 1; }
-        text="$2"; shift 2
-        ;;
-      -s|--speed)
-        [[ -n "${2:-}" ]] || { echo "Missing value for -s/--speed"; return 1; }
-        speed="$2"; shift 2
-        ;;
-      --) shift; break ;;
-      *)  break ;;
-    esac
-  done
-
-  local -a cmd
-  if [[ $tool == "figlet" ]]; then
-    cmd=(figlet -f)
-  else
-    cmd=(toilet -f)
-  fi
-
-  local found=0 out font
-  for dir in "${dirs[@]}"; do
-    [[ -d $dir ]] || continue
-    for f in "$dir"/*.$ex(N); do
-      [[ -f $f ]] || continue
-      font="${${f##*/}%.$ex}"
-
-      # render; skip broken fonts quietly
-      out="$("${cmd[@]}" "$font" -- "$text" 2>/dev/null)" || continue
-
-      echo "---------------------------"
-      if (( speed > 0 )); then
-        # print line-by-line with delay
-        while IFS= read -r line; do
-          print -r -- "$line"
-          sleep "$speed"
-        done <<< "$out"
-      else
-        print -r -- "$out"
-      fi
-      echo "$font"
-      echo
-      found=1
-    done
-  done
-
-  (( found )) || echo "No fonts found. Blame Bill Gates."
-}
-```
-
-> # UnWebP
-> Convert all WebP in current path to PNG
-```bash
-unwebp() {
-  emulate -L zsh
-  setopt null_glob
-
-  for f in *.webp; do
-    local out="${f%.webp}.png"
-    ffmpeg -loglevel error -y -i "$f" "$out" && rm -f "$f"
-    echo "[*] $f → $out"
-  done
-}
-```
+> Collection of networking aliases and helpers. \
+> `modules/net-pack.zsh`
+> ---
+> ## CLI Clock
+> Render a large ASCII clock in the terminal. \
+> `modules/cli-clock.zsh`
+> ---
+> ## ASCII Fonts
+> Preview installed `figlet`/`toilet` fonts with optional delays. \
+> `modules/ascii-fonts.zsh`
+> ---
+> ## UnWebP
+> Convert WebP files to PNG and remove the originals. \
+> `modules/unwebp.zsh`

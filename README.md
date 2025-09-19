@@ -1,8 +1,45 @@
 ![source zshrc3-ezgif com-gif-maker](https://github.com/user-attachments/assets/eda11651-d644-4067-a973-1513336960b0)
 > # Shell user configs (.rc) [.zshrc]
 
-
 ---
+
+> ## ***list recently modified files***
+> ### Trim name to 25 characters, preserve extension, color output \
+> <img width="298" height="186" alt="image" src="https://github.com/user-attachments/assets/451e3ff9-cafe-447c-8b7d-7176239bbf8d" />
+
+```zsh
+# list files, sort by recent modification date, trim name to 25 chars, keep format and highlight output
+lsf() {
+  command ls --color=always --hyperlink=never -1 -p -t "$@" \
+  | tac \
+  | awk '
+    BEGIN{
+      ESC=sprintf("%c",27); esc_re=ESC "\\[[0-9;]*[A-Za-z]"; reset_re=ESC "\\[[0-9;]*m"; max=25
+    }
+    {
+      orig=$0
+      plain=orig; gsub(esc_re,"",plain)             # strip ANSI for logic
+      if (plain ~ /\/$/) next                       # drop dirs (from -p)
+      col=""; rest=orig                             
+      while (match(rest, "^" esc_re)) {             # leading color prefix
+        col=col substr(rest,RSTART,RLENGTH); rest=substr(rest,RLENGTH+1)
+      }
+      reset=""; t=orig                              
+      while (match(t, reset_re)) {                   # last reset
+        reset=substr(t,RSTART,RLENGTH); t=substr(t,RSTART+RLENGTH)
+      }
+      # split base/ext; ignore leading dot as extension
+      n=length(plain); dotpos=0
+      for (i=2;i<=n-1;i++) if (substr(plain,i,1)==".") dotpos=i
+      if (dotpos>1) { base=substr(plain,1,dotpos-1); ext=substr(plain,dotpos+1) } else { base=plain; ext="" }
+      base_max=max; if (ext!="") base_max=max-1-length(ext); if (base_max<1) base_max=1
+      vbase=substr(base,1,base_max)
+      out=vbase ((ext!="") ? "." ext : "")
+      printf "%s%s%s\n", col, out, reset
+    }'
+}
+```
+
 > ## extract
 > Extract any type of archive with simple command
 ```bash

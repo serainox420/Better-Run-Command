@@ -3,6 +3,19 @@
 
 ---
 
+> ## Better `less`
+```zsh
+# les (better less)
+# less: kolory pewne, start od dołu
+les() { command less -r +G -X -- "$@"; }  # jeśli wolisz bez raw: zamień -r na -R
+
+# ls → less z wymuszoną kolorystyką
+lez() { command ls --color=always -1 "$@" | les; }
+
+# twoje lsf → less
+lezz() { lsf "$@" | les; }  # upewnij się, że w lsf masz --color=always
+```
+
 > ## ***list recently modified files***
 > ### Trim name to 25 characters, preserve extension, color output \
 > <img width="298" height="186" alt="image" src="https://github.com/user-attachments/assets/451e3ff9-cafe-447c-8b7d-7176239bbf8d" />

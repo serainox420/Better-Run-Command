@@ -7,3 +7,9 @@ stray() {
     export PID
     printf "Started PID: %s\n" "$PID"
 }
+
+# Kill stray process
+slay() {
+    echo "Killing $PID"
+    kill -9 $PID
+}

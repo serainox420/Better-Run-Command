@@ -1,11 +1,13 @@
-![source zshrc3-ezgif com-gif-maker](https://github.com/user-attachments/assets/eda11651-d644-4067-a973-1513336960b0)
-> # Shell user configs (.rc) [.zshrc]
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/eda11651-d644-4067-a973-1513336960b0"
+       alt="ZRC-Logo"
+       width="500"></p>
 
 ---
 
-# ⚙️ Modules Showcase
-
-<div align="center">
+<div align="center"><h1> ⚙️ Modules Showcase ⚙️ </h1>
+  
+<details> <summary><strong> [Click to Expand] </strong></summary>
 
 | Module | Description |
 |--------|-------------|
@@ -38,6 +40,10 @@
 | **ASCII Fonts** <br><sub>`modules/ascii-fonts.zsh`</sub> | Preview installed `figlet`/`toilet` fonts with optional delays. |
 | **UnWebP** <br><sub>`modules/unwebp.zsh`</sub> | Convert WebP files to PNG and remove the originals. |
 
+
+</details>
 </div>
 
 ---
+
+

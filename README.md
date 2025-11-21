@@ -1,7 +1,7 @@
 <p align="center">
   <img src="https://github.com/user-attachments/assets/eda11651-d644-4067-a973-1513336960b0"
        alt="ZRC-Logo"
-       width="500"></p>
+       width="250"></p>
 
 ---
 
